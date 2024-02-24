@@ -4,6 +4,13 @@ from functools import reduce
 import operator
 start_time = time.time()
 
+#global public parameters
+N: int
+g: int
+si_set : set
+ei_prime_set : set
+
+
 def keyGen(k : int,l : int, q : int):
     """k correspond to security parameter, must larger than 1
         l correspond to length of q (l+1)-bit random primes and q is the number of primes e1,...,eq"""
@@ -52,11 +59,49 @@ def keyGen(k : int,l : int, q : int):
            
         
     
-    return p1,p2 #return a tuple
+    return N,g,si_set,ei_primes_set
 
 
-(p1,p2) = keyGen(k=1028,l=1023,q=10)
-output_primes = "First prime: {} and second prime: {}. Terminated in {} ms"
-print(output_primes.format(p1,p2,time.time() - start_time))
+#committing procedure. Return the commitment value C and aux information (message:list)
+
+def com(message : list):
+
+    C = 1
+    for i in si_set:
+        C *= si_set[i]**message[i]
+    return C
+
+
+#opening procedure
+def open(m:str,i:int,aux:list):
+    
+    prod = 1
+    #evaluating product of series
+    for j in len(si_set):
+        if(j != i):
+            prod *= (si_set[j]**aux[j]) % N
+    #evaluating proof 
+    return prod**(1/ei_prime_set[i])
+
+
+
+#verify procedure
+def vrfy(C: int, m: str, i: int, proof):
+    if (C == ((si_set[i]**m)*(proof**ei_prime_set[i]) % N)):
+        return True
+    else:
+        return False
+
+
+
+
+#getting pubblic parameter pp such as (N,g,si_set,ei_set)
+(N,g,si_set,ei_prime_set) = keyGen(k=1028,l=1023,q=10)
+
+#message space is {0,1}^l, e.g if l = 1024 bit or 1 KByte and a string is made of 1 byte for 1 character, we can store onlye 128 character
+
+
+out = "Terminated in {} ms"
+print(out.format(time.time() - start_time))
 
 
