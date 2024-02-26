@@ -1,7 +1,9 @@
 from Crypto.Util import number
+from Crypto.Random import random
 import time
 from functools import reduce
 import operator
+import sys
 start_time = time.time()
 
 #global public parameters
@@ -50,11 +52,13 @@ def keyGen(k : int,l : int, q : int):
 
         
     #get first generator of Zn
-    g: int = __get_generator(N)
+    #g: int = __get_generator(N)
+    g: int = random.randrange(1,N)
     #evaluate Si value 
     for i in range(0,q):
         ei_primes_list = list(ei_primes_set)
-        si_set.add(g**reduce(operator.mul,ei_primes_list.pop(i)))
+        ei_primes_list.pop(i)
+        si_set.add(g**reduce(operator.mul,ei_primes_list))
         
            
         
@@ -68,7 +72,7 @@ def com(message : list):
 
     C = 1
     for i in si_set:
-        C *= si_set[i]**message[i]
+        C *= si_set[i]**int.from_bytes(message[i].encode(),sys.byteorder)
     return C
 
 
@@ -79,7 +83,7 @@ def open(m:str,i:int,aux:list):
     #evaluating product of series
     for j in len(si_set):
         if(j != i):
-            prod *= (si_set[j]**aux[j]) % N
+            prod *= (si_set[j]**int.from_bytes(aux[j].encode(),sys.byteorder)) % N
     #evaluating proof 
     return prod**(1/ei_prime_set[i])
 
@@ -87,7 +91,7 @@ def open(m:str,i:int,aux:list):
 
 #verify procedure
 def vrfy(C: int, m: str, i: int, proof):
-    if (C == ((si_set[i]**m)*(proof**ei_prime_set[i]) % N)):
+    if (C == ((si_set[i]**int.from_bytes(m.encode(),sys.byteorder))*(proof**ei_prime_set[i]) % N)):
         return True
     else:
         return False
@@ -96,7 +100,7 @@ def vrfy(C: int, m: str, i: int, proof):
 
 
 #getting pubblic parameter pp such as (N,g,si_set,ei_set)
-(N,g,si_set,ei_prime_set) = keyGen(k=1028,l=1023,q=10)
+(N,g,si_set,ei_prime_set) = keyGen(k=12,l=8,q=2)
 
 #message space is {0,1}^l, e.g if l = 1024 bit or 1 KByte and a string is made of 1 byte for 1 character, we can store onlye 128 character
 
