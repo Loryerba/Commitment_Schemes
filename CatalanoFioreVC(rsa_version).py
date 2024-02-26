@@ -12,7 +12,7 @@ start_time = time.time()
 N: int
 g: int
 si: list
-ei : list
+ei : list 
 
 
 def keyGen(k : int,l : int, q : int):
@@ -84,10 +84,12 @@ def open(m:str,i:int,aux:list):
     #evaluating product of series
     for j in range(0,len(si)):
         if(j != i):
-            prod *= (si[j]**int.from_bytes(aux[j].encode(),sys.byteorder)) % N
-    #evaluating proof 
-    return prod**(1/ei[i])
+            prod *= (si[j]**int.from_bytes(aux[j].encode(),sys.byteorder))
+    #evaluating product's root
 
+    prod = decimal.Decimal(prod)**decimal.Decimal(1/ei[i])
+    
+    return prod % decimal.Decimal(N)
 
 
 #verify procedu1re
@@ -99,7 +101,7 @@ def vrfy(C: int, m: str, i: int, proof):
     productvalue = ( decimal.Decimal(firstvalue) * decimal.Decimal((proof**ei[i])))
 
     #evalue product mod N
-    modulevalue = productvalue.__mod__(decimal.Decimal(N))
+    modulevalue = productvalue%(decimal.Decimal(N))
     if (decimal.Decimal(C) == modulevalue):
         return True
     else:
@@ -109,7 +111,7 @@ def vrfy(C: int, m: str, i: int, proof):
 
 
 #getting pubblic parameter pp such as (N,g,si_list,ei_set)
-(N,g,si,ei) = keyGen(k=12,l=8,q=2)
+(N,g,si,ei) = keyGen(k=6,l=8,q=2)
 commitment_value = com(message=["1","2","3"])
 print("Commitment value: " + str(commitment_value))
 proof = open("2",1,aux = ["1","2","3"])
