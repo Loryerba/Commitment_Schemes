@@ -34,7 +34,7 @@ def keyGen(k : int,l : int, q : int):
     ei_primes_list = list ()
     while(0 <= len(ei_primes_list) < q):
         #we can use := inside larger expression like if statement since Python 3.8
-        if((ei := number.getPrime(l+1)) % N != 0):
+        if(N % (ei := number.getPrime(l+1))  != 0):
             ei_primes_list.append(ei)
     
 
@@ -73,7 +73,7 @@ def com(message : list):
 
     C : int = 1
     for i in range(0,len(si)):
-        C *= si[i]**int.from_bytes(message[i].encode(),sys.byteorder)
+        C = C * (si[i]**int.from_bytes(message[i].encode(),sys.byteorder))
     return C
 
 
