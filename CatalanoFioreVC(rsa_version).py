@@ -4,13 +4,15 @@ import time
 from functools import reduce
 import operator
 import sys
+import decimal
+sys.set_int_max_str_digits(0)
 start_time = time.time()
 
 #global public parameters
 N: int
 g: int
-si_set : set
-ei_prime_set : set
+si: list
+ei : list
 
 
 def keyGen(k : int,l : int, q : int):
@@ -29,16 +31,15 @@ def keyGen(k : int,l : int, q : int):
     N = p1*p2
     
     #set of q l(+1)-bit primes since e1,....,eq do not divide for N
-    ei_primes_set = set()
-
-    while(0 <= len(ei_primes_set) < q):
+    ei_primes_list = list ()
+    while(0 <= len(ei_primes_list) < q):
         #we can use := inside larger expression like if statement since Python 3.8
         if((ei := number.getPrime(l+1)) % N != 0):
-            ei_primes_set.add(ei)
+            ei_primes_list.append(ei)
     
 
     
-    si_set = set()
+    si_list = list()
     
     #private function for calcutating generator of cyclic group Zn which has N-order 
     def __get_generator(order: int):
@@ -56,23 +57,23 @@ def keyGen(k : int,l : int, q : int):
     g: int = random.randrange(1,N)
     #evaluate Si value 
     for i in range(0,q):
-        ei_primes_list = list(ei_primes_set)
-        ei_primes_list.pop(i)
-        si_set.add(g**reduce(operator.mul,ei_primes_list))
+        ei_primes_list_copy = list(ei_primes_list)
+        ei_primes_list_copy.pop(i)
+        si_list.append(g**reduce(operator.mul,ei_primes_list_copy))
         
            
         
     
-    return N,g,si_set,ei_primes_set
+    return N,g,si_list,ei_primes_list
 
 
 #committing procedure. Return the commitment value C and aux information (message:list)
 
 def com(message : list):
 
-    C = 1
-    for i in si_set:
-        C *= si_set[i]**int.from_bytes(message[i].encode(),sys.byteorder)
+    C : int = 1
+    for i in range(0,len(si)):
+        C *= si[i]**int.from_bytes(message[i].encode(),sys.byteorder)
     return C
 
 
@@ -81,17 +82,25 @@ def open(m:str,i:int,aux:list):
     
     prod = 1
     #evaluating product of series
-    for j in len(si_set):
+    for j in range(0,len(si)):
         if(j != i):
-            prod *= (si_set[j]**int.from_bytes(aux[j].encode(),sys.byteorder)) % N
+            prod *= (si[j]**int.from_bytes(aux[j].encode(),sys.byteorder)) % N
     #evaluating proof 
-    return prod**(1/ei_prime_set[i])
+    return prod**(1/ei[i])
 
 
 
-#verify procedure
+#verify procedu1re
 def vrfy(C: int, m: str, i: int, proof):
-    if (C == ((si_set[i]**int.from_bytes(m.encode(),sys.byteorder))*(proof**ei_prime_set[i]) % N)):
+    #evaluate si^m
+    firstvalue = ((si[i]**int.from_bytes(m.encode(),sys.byteorder))) 
+
+    #evaluate si^m * proof^ei
+    productvalue = ( decimal.Decimal(firstvalue) * decimal.Decimal((proof**ei[i])))
+
+    #evalue product mod N
+    modulevalue = productvalue.__mod__(decimal.Decimal(N))
+    if (decimal.Decimal(C) == modulevalue):
         return True
     else:
         return False
@@ -99,9 +108,13 @@ def vrfy(C: int, m: str, i: int, proof):
 
 
 
-#getting pubblic parameter pp such as (N,g,si_set,ei_set)
-(N,g,si_set,ei_prime_set) = keyGen(k=12,l=8,q=2)
-
+#getting pubblic parameter pp such as (N,g,si_list,ei_set)
+(N,g,si,ei) = keyGen(k=12,l=8,q=2)
+commitment_value = com(message=["1","2","3"])
+print("Commitment value: " + str(commitment_value))
+proof = open("2",1,aux = ["1","2","3"])
+print("Proof value: " + str(proof))
+print("Verfying output: " + str(vrfy(commitment_value,"2",1,proof)))
 #message space is {0,1}^l, e.g if l = 1024 bit or 1 KByte and a string is made of 1 byte for 1 character, we can store onlye 128 character
 
 
