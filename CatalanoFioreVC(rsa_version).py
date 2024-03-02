@@ -4,7 +4,11 @@ import time
 from functools import reduce
 import operator
 import sys
-import decimal
+from sympy.ntheory import totient
+from sympy.polys.polytools import gcd
+from egcd import egcd
+
+
 sys.set_int_max_str_digits(0)
 start_time = time.time()
 
@@ -32,12 +36,12 @@ def keyGen(k : int,l : int, q : int):
     
     #set of q l(+1)-bit primes since e1,....,eq do not divide for N
     ei_primes_list = list ()
+    
+    N_totient = totient(N)
     while(0 <= len(ei_primes_list) < q):
         #we can use := inside larger expression like if statement since Python 3.8
-        if(N % (ei := number.getPrime(l+1))  != 0):
+        if(N_totient % (ei := number.getPrime(l+1))  != 0):
             ei_primes_list.append(ei)
-    
-
     
     si_list = list()
     
@@ -79,6 +83,24 @@ def com(message : list):
 
 #opening procedure
 def open(m:str,i:int,aux:list):
+
+    
+    #evaluate moduler ethroot of message
+    def __ethRoot(e: int, message: int, m: int):
+        m_totient = totient(m)
+        if(gcd(e,m_totient) == 1 and gcd(message,m) ==1):
+            (gcd_,t,s) = egcd(e,m_totient)
+            power = message ** t
+            remainder = power % m
+            if((remainder**e)%m == (message%m)):
+                return remainder
+            else:
+                return -1
+
+        else:
+            return -1
+
+
     
     prod = 1
     #evaluating product of series
@@ -87,9 +109,10 @@ def open(m:str,i:int,aux:list):
             prod *= (si[j]**int.from_bytes(aux[j].encode(),sys.byteorder))
     #evaluating product's root
 
-    prod = decimal.Decimal(prod)**decimal.Decimal(1/ei[i])
-    
-    return prod % decimal.Decimal(N)
+    if((remainder:= __ethRoot(ei[i],prod,N)) == -1):
+        print("Error while evaluating eth root")
+    else:
+        return remainder
 
 
 #verify procedu1re
@@ -98,28 +121,26 @@ def vrfy(C: int, m: str, i: int, proof):
     firstvalue = ((si[i]**int.from_bytes(m.encode(),sys.byteorder))) 
 
     #evaluate si^m * proof^ei
-    productvalue = ( decimal.Decimal(firstvalue) * decimal.Decimal((proof**ei[i])))
+    productvalue = firstvalue * (proof**ei[i])
 
     #evalue product mod N
-    modulevalue = productvalue%(decimal.Decimal(N))
-    if (decimal.Decimal(C) == modulevalue):
+    modulevalue = productvalue%(N)
+    #check if commitmentvalue == commitment_evaluated
+    if (C == modulevalue):
         return True
     else:
         return False
 
 
 
-
+#message space is {0,1}^l, e.g if l = 1024 bit or 1 KByte and a string is made of 1 byte for 1 character, we can store onlye 128 character
 #getting pubblic parameter pp such as (N,g,si_list,ei_set)
 (N,g,si,ei) = keyGen(k=6,l=8,q=2)
 commitment_value = com(message=["1","2","3"])
 print("Commitment value: " + str(commitment_value))
-proof = open("2",1,aux = ["1","2","3"])
+proof = open("1",1,aux = ["1","2","3"])
 print("Proof value: " + str(proof))
-print("Verfying output: " + str(vrfy(commitment_value,"2",1,proof)))
-#message space is {0,1}^l, e.g if l = 1024 bit or 1 KByte and a string is made of 1 byte for 1 character, we can store onlye 128 character
-
-
+print("Verfying output: " + str(vrfy(commitment_value,"1",1,proof)))
 out = "Terminated in {} ms"
 print(out.format(time.time() - start_time))
 
