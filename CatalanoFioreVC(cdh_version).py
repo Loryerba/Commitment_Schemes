@@ -1,103 +1,85 @@
-import ecpy
 from ecpy import ExtendedFiniteField,EllipticCurve, FiniteField, gcd, modinv, tate_pairing
 from ecpy import EllipticCurveRepository
-from Crypto.Util import number
-from Crypto.Random import random
-import sys
-#print(G)
-#newg = G.__mul__(5)
+import random
 
-#print(number.isPrime(n))
-#print (tate_pairing(E,G,newg,n))
+field ,ec,generator,prime_order = EllipticCurveRepository('secp256k1')
 
-#public info about curve
-F: FiniteField
-E: EllipticCurve
-g: EllipticCurve
-p: int
-zi_list : list
-hi_list: list
-hi_matrix : list
 
-def castMessage(message:str):
-    return int.from_bytes(message.encode(),sys.byteorder)
+def keygen(g, q):
+    z=[]
+    for i in range(q):
+       z.append(random.randint(0,50))
+    h1 = []
+    for i in range(len(z)):
+        h1.append(generator.__mul__(z[i]))
+    h2 = []
+    for i in range(len(z)):
+        h2.append([])
+        for j in range(len(z)):
+            if(i == j):
+                h2[i].append(0)
+                continue
+            h2[i].append(generator.__mul__(z[i]*z[j]))
+    return h1, h2, z
 
-def mul_to_pow(g: ecpy.elliptic_curve.EllipticCurve, scalar: int):
-    while(scalar > 0):
-        g = g.__add__(g)
-        scalar-=1
-    return g
-
-def div_between_point(g: ecpy.elliptic_curve.EllipticCurve, g2: ecpy.elliptic_curve.EllipticCurve):
-    return g.__sub__(g2)
-
-def mul_between_point(g:ecpy.elliptic_curve.EllipticCurve,g2: ecpy.elliptic_curve.EllipticCurve):
-    return g.__add__(g2)
-
-def keyGen(q):  
-    
-    #F = Based Field object of E
-    #E = Elliptic Curve corresponding to 'name'
-    #g = Base point, generator
-    #p = order of g
-    field ,ec,generator,prime_order = EllipticCurveRepository('secp256k1')
-    #modular class from 0 to p-1
-    Zp = prime_order
-    zilist = list ()
-    hilist = list ()
-    himatrix = list ()
-    #choose randomly z1,...,zq
-    #set hi = g ** zi
-    for i in range(0,q):
-        zilist.append(random.randrange(1,10))
-        hilist.append(mul_to_pow(generator,zilist[i]))
-    
-    #initialize qxq matrix to -1
-    himatrix = [[-1 for _ in range(q)] for _ in range(q)]
-    
-    #print(hi_matrix)
-
-    #for all i,j = 1...q, i!=q set hij = g ** (zi*zj)
-    for i in range(0,q):
-        for j in range(0,q):
-            if(i!=j):
-                himatrix[i][j] = mul_to_pow(generator, (zilist[i]*zilist[j]))
-
-    return(field,ec,generator,prime_order,zilist,hilist,himatrix)
-
-    
-def Com(q:int,message:list):
-    C = mul_to_pow(hi_list[0],castMessage(message[0]))
-    for i in range(1,q):
-        C = mul_between_point(C,mul_to_pow(g=hi_list[i],scalar=castMessage(message[i])))
+def commit(messages, h1):
+    C = h1[0].__mul__(0)
+    for i in range(len(messages)):
+        C = C.__add__(h1[i].__mul__(messages[i]))
     return C
 
+def open(message, i, messages, h2, g):
+    #print(g)
+    A = generator.__mul__(0)
+    for j in range(len(messages)):
+        if(i==j):
+            continue
+        A = A.__add__(h2[i][j].__mul__(messages[j]))
+    return A
 
-def Open(q:int,message:str, i:int):
-    check = True
-    for j in range(0,q):
-        if(j!=i and check):
-            proof = mul_to_pow(hi_matrix[i][j],castMessage(message[j]))
-            check = False
-        elif (j!=i):
-            proof = mul_between_point(proof,mul_to_pow(hi_matrix[i][j],castMessage(message[j])))
+def open2(messages,i,h1,z):
+    A = generator.__mul__(0)
+    for j in range(len(messages)):
+        if(i==j):
+            continue
+        A = A.__add__(h1[i].__mul__(messages[j]*z[j]))
     
-    return proof
+    return A
+
+def verify(C, message, i, A, g, h1):
+    
+    denominatore = h1[i].__mul__(message)
+    #calcolo di C/denom come C + -denom
+    C = C.__sub__(denominatore)
+    
+    t1 = tate_pairing(ec,C,h1[i],prime_order)
+    t2 = tate_pairing(ec,A,g,prime_order)
+    print(t1)
+    print(t2)
+    return t1 == t2
 
 
-def Vrfy(C,proof,i:int,message:list):
-    hi= mul_to_pow(hi_list[i],castMessage(message[i]))
-    return tate_pairing(E,div_between_point(C,hi),hi_list[i],p) == tate_pairing(E,proof,g,p)
+def main():
+    h1,h2,z = keygen(generator,q=3)
+    messages = [1,2,3]
+    C = commit(messages,h1)    
+    A = open(messages[0],0,messages,h2,generator)
+    A2 = open2(messages,0,h1,z)
 
+    print(A == A2)
+    
+    """comm = h1[1].__mul__(0)
+    for i in range(1,len(messages)):
+        comm = comm.__add__(h1[i].__mul__(messages[i]))
+    
+    C = C.__sub__(h1[0].__mul__(messages[0]))
 
-(F,E,g,p,zi_list,hi_list,hi_matrix) = keyGen(q=3)
-message = list(("1","2","3"))
-print(g.__add__(g))
-C = Com(q=3,message=message)
-proof = Open(q=3,message=message,i=0)
-print(Vrfy(C,proof,i=0,message=message))
-
-print("Ordine del gruppo: " + str(p))
-print("Generatore del gruppo: " + g.__str__())
+    print(comm == C)"""
+    if(verify(C, messages[0], 0, A, generator, h1)):
+        print("verified")
+    else:
+       print("not verified")
+   
+main()
 
 
