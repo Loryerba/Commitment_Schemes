@@ -1,6 +1,8 @@
 import math
 from Crypto.Util import number
 import copy
+import random
+import time 
 
 #verify fun
 def verify(C, message, i, open, S, ei_list, n):
@@ -118,21 +120,92 @@ def keyGen(k,qlen, l):
     return n, random_primes, a, si_list
 
 
+#comute commitment update
+def update(C: int, m:int, new_m:int,i:int,si_list,n):
+    new_c = 1
+    b = pow(si_list[i],(new_m-m),n)
+    new_c = (C * b) % n
+    return new_c
+
+
+def updateProof(oldProof, e, oldm, newm, a, i, j, n):
+    alt = a
+    for k in range(len(e)):
+        if(k == i or k == j):
+            continue
+        alt = pow(alt, e[k], n)
+
+    rootS = alt
+    right = pow(rootS, newm - oldm, n)
+    full = (oldProof*right)%n
+    return full
+     
+        
+  
+
+    
+
+
 def main():
-    messages = [1234, 5678, 9101112] 
+    messages = []
 
+    
+    for i in range(0,1000):
+        messages.append(random.randint(0,1000000))
+    
+    #start_time = time.time()
     n, ei_list, a, si_list = keyGen(k=2048,qlen= len(messages),l=25)
+    #print("Generation messages required: " + str(time.time()-start_time) + " seconds")
 
+    #start_time = time.time()
     c = commit(messages, si_list, n)
+    #print(str(time.time()-start_time)  + " seconds")
 
+    #start_time = time.time()
     proof = open(messages, ei_list, a, n, 0)
+    #later use (opening at pos 1)
+    oldProof = open(messages, ei_list, a, n, 1) 
+    #print("Generation proof required: " + str(time.time()-start_time) + " seconds")
+
+    #start_time = time.time()
     verified = verify(c, messages[0], 0, proof, si_list, ei_list, n)
+    #print("Verify proof required: " + str(time.time()-start_time) + " seconds")
     if(verified):
         print("Verifying worked")
     else:
         print("Verifying not worked")
 
 
+    newmessage = random.randint(1,12234567) #random new message, update position 0
+    #start_time = time.time()
+    newC = update(c,messages[0],newmessage,0,si_list,n)
+    #print("Update commitment required: " + str(time.time()-start_time) + " seconds")
 
+
+    verified2 = verify(newC, newmessage, 0, proof, si_list, ei_list, n)
+    if(verified2):
+       print("Verifying update worked")
+    else:
+      print("Verifying update not worked")
+
+
+    #start_time = time.time()
+    #update proof at pos j (newC is the updated commitment)
+    newProof = updateProof(oldProof, ei_list, messages[0], newmessage, a, 0, 1, n)
+    #print("Update proof required: " + str(time.time()-start_time) + " seconds")
+    verified3 = verify(newC, messages[1], 1, newProof, si_list, ei_list, n)
+    if(verified3):
+        print("Verifying update proof worked")
+    else:
+        print("Verifying update proof not worked")
+
+    #sanity check for previous proof
+
+    verified4 = verify(newC,messages[1],1,oldProof,si_list,ei_list,n)
+
+    if(verified4):
+        print("Old proof still works")
+    else:
+        print("Old proof no longer works")
 
 main()
