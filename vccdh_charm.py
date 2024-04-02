@@ -66,6 +66,14 @@ def verify(C, message, i, A, g, h1):
     t2 = pair(A,g)
     return t1 == t2
 
+def update(C, oldmessage, newmessage, i,h1):
+    newc = C+h1[i]**(newmessage-oldmessage)
+    return newc
+
+def updateProof(A,newmessage,oldmessage,i,j,h2):
+    newproof = A+(h2[j][i]**(newmessage - oldmessage))
+    return newproof
+
 
 def main():
 
@@ -96,5 +104,32 @@ def main():
     start_time = time.time()
     print("Verify output:" + str(verify(C,messages[0],0,A,g,h1)))
     print("Verify required:" + str(time.time()-start_time) + " seconds")
+
+    start_time = time.time()
+    #perform new commitment at pos 0 for newmessage == 10 
+    newc = update(C,messages[0],10000002,0,h1)
+    print("Update commitment required:" + str(time.time()-start_time) + " seconds")
+    verified2 = verify(newc,10000002,0,A,g,h1)
+    if(verified2):
+       print("Verifying update worked")
+    else:
+      print("Verifying update not worked")
+
+    #perform another opening at pos 1
+    oldproof = open(1,messages,h2,g)
+    start_time = time.time()
+    #peform an update of olderproof, to a new proof from pos 0 to 1, from old message at pos [0] to newmessage
+    newproof = updateProof(oldproof,10000002,messages[0],0,1,h2)
+    print("Update proof required:" + str(time.time()-start_time) + " seconds")
+
+    verified3 = verify(newc,messages[1],1,newproof,g,h1)
+
+    if(verified3):
+        print("Verifying update proof worked")
+    else:
+        print("Verifying update proof not worked")
+
+
+
 
 main()
