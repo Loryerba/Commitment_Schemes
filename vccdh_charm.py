@@ -64,21 +64,37 @@ def verify(C, message, i, A, g, h1):
     
     t1 = pair(C,h1[i])
     t2 = pair(A,g)
-    print(t1)
-    print(t2)
     return t1 == t2
 
 
 def main():
-    group = PairingGroup('SS512')
+
+    dim = 1000
+
+    group = PairingGroup('SS1024')
     g = group.random(G1)
+
     start_time = time.time()
-    h1,h2,z = keygen(g, q = 1000)
-    print(time.time()-start_time)
-    """messages = [1,2,3]
+    h1,h2,z = keygen(g, q = dim)
+    print("KeyGen required:" + str(time.time()-start_time) + " seconds")
+    messages = []
+
+
+    for i in range(0,dim):
+        messages.append(random.randint(0,1000000))
+
+    start_time = time.time()
     C = commit(messages,h1)
+    print("Commit required:" + str(time.time()-start_time) + " seconds")
+
+    start_time = time.time()
     A = open(0,messages,h2,g)
+    print("Opening required:" + str(time.time()-start_time) + " seconds")
+
     #A2 = open2(messages,0,h1,z,g)
-    print(verify(C,messages[0],0,A,g,h1))"""
+
+    start_time = time.time()
+    print("Verify output:" + str(verify(C,messages[0],0,A,g,h1)))
+    print("Verify required:" + str(time.time()-start_time) + " seconds")
 
 main()
