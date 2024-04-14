@@ -5,7 +5,7 @@ import random
 import time 
 
 #verify fun
-def verify(C, message, i, open, S, ei_list, n):
+def verify(C:int, message:int, i:int, open:int, S:list, ei_list:list, n:int) -> bool:
 
     #evaluate proof^ei-th % n
     proofToEi =pow(open, ei_list[i], n)
@@ -19,7 +19,7 @@ def verify(C, message, i, open, S, ei_list, n):
         return 0
 
 #opening fun
-def open(messages, ei_list, a, n, i):
+def open(messages:list, ei_list:list, a:int, n:int, i:int) -> int:
 
     #creating deepcopied list of ei_list primes
     newlist = copy.deepcopy(ei_list)
@@ -43,7 +43,7 @@ def open(messages, ei_list, a, n, i):
     return prod
 
 #commit fun
-def commit(messages, S, n):
+def commit(messages:list, S:list, n:int) -> int:
     #set neutral element c = 1
     c = 1
     for i in range(len(messages)):
@@ -53,7 +53,7 @@ def commit(messages, S, n):
 
 
 #divide et impera method
-def evaluate_Si(primes, a, n): 
+def evaluate_Si(primes:list, a:int, n:int) -> list: 
     num = len(primes)
     if num == 1:
         return [a]
@@ -85,7 +85,7 @@ def evaluate_Si(primes, a, n):
 
     return si_list
 
-def keyGen(k,qlen, l):
+def keyGen(k:int,qlen:int, l:int) -> tuple:
     #generation of two k/2-bit primes p and q
     p =number.getPrime(math.floor(k/2))
     q = number.getPrime(math.floor(k/2))
@@ -121,14 +121,14 @@ def keyGen(k,qlen, l):
 
 
 #comute commitment update
-def update(C: int, m:int, new_m:int,i:int,si_list,n):
+def update(C: int, m:int, new_m:int,i:int,si_list:list,n:int) -> int:
     new_c = 1
     b = pow(si_list[i],(new_m-m),n)
     new_c = (C * b) % n
     return new_c
 
 
-def updateProof(oldProof, e, oldm, newm, a, i, j, n):
+def updateProof(oldProof: int, e:list, oldm: int, newm: int, a:int, i:int, j:int, n:int) -> int:
     alt = a
     for k in range(len(e)):
         if(k == i or k == j):
@@ -154,7 +154,7 @@ def main():
         messages.append(random.randint(0,1000000))
     
     #start_time = time.time()
-    n, ei_list, a, si_list = keyGen(k=2048,qlen= len(messages),l=25)
+    n, ei_list, a, si_list = keyGen(k=1024,qlen= len(messages),l=25)
     #print("Generation messages required: " + str(time.time()-start_time) + " seconds")
 
     #start_time = time.time()
@@ -208,4 +208,5 @@ def main():
     else:
         print("Old proof no longer works")
 
+main()
 main()
