@@ -12,6 +12,19 @@ KeyGen requires:
     q: length of message list
 """
 def keygen(g:G1,q:int) -> tuple:
+
+    #list comprehension version
+    """
+     #calculate zi element <-$ Zp
+    z=[random.randint(0,q) for i in range(0,q)]
+
+    #calculate hi as g^{zi}
+    hi = [g**z[i] for i in range(len(z))]
+    
+    #calculate hij as g^{zi*zj}
+    h_ij = [[g**(z[i]*z[j]) if i!=j else 0 for j in range(len(z))] for i in range(len(z))]
+    
+    return hi, h_ij, z"""
     z=[]
     #calculate zi element <-$ Zp
     for i in range(q):
@@ -135,19 +148,22 @@ def updateProof(A:G1,newmessage:int,oldmessage:int,i:int,j:int,h_ij:list) -> G1:
 
 def main():
 
-    dim = 100
+    dim = 1000
 
     group = PairingGroup('SS1024')
     g = group.random(G1)
 
+    
+    messages = []
+
+    start_time = time.time()
+    for i in range(0,dim):
+        messages.append(random.randint(0,1000000))
+    print("Message gen required:" + str(time.time()-start_time) + " seconds")
+
     start_time = time.time()
     hi,h_ij,z = keygen(g, q = dim)
     print("KeyGen required:" + str(time.time()-start_time) + " seconds")
-    messages = []
-
-
-    for i in range(0,dim):
-        messages.append(random.randint(0,1000000))
 
     start_time = time.time()
     C = commit(messages,hi)
