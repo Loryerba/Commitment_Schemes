@@ -31,11 +31,11 @@ g = C[1]
 
 
 
-from hashlib import md5
+from hashlib import sha256
 def Insert(C:tuple,k:int,v:int,g:int):
     c1,c2= C
     Ak = ((c1,c2),(g,1,1),0)
-    z = int.from_bytes(md5(str(k).encode('utf-8')).digest(), 'big')
+    z = int.from_bytes(sha256(str(k).encode('utf-8')).digest(), 'big')
     first = c1**z
     second = c2**v
     C = (first*int(second),int(c2**z))
@@ -48,7 +48,7 @@ c3,A3= Insert(C,k=3,v=5,g=g)
 
 def Verifiy(C:tuple,k:int,v:int,Ak:tuple):
     c1,c2 = C
-    z = int.from_bytes(md5(str(k).encode('utf-8')).digest(), 'big')
+    z = int.from_bytes(sha256(str(k).encode('utf-8')).digest(), 'big')
     ak1 = Ak[0][0]
     ak2 = Ak[0][1]
     uk = Ak[2]
