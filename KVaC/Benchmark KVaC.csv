@@ -1,0 +1,5 @@
+Group;KeyGen required;MessageNumber;GenNumber;Insert;Verifiy time;Proof Update;Update commitment
+ZR;0,06;100;;1,17;0,14;0,06;0,08
+ZR;0,08;1000;;17;0,18;0,06;0,083
+ZR;0,08;10000;;300;0,19;0,06;0,08
+ZR;0,11;100000;;1405;0,18;0,06;0,07
