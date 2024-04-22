@@ -1,0 +1,4 @@
+CurveType;KeyGen required;MessageNumber;GenNumber;Commitment time;Proof time;Verifiy time;Aggregation;Update commitment
+MNT159;17965;100;;1,4;32;249;0,17;0,1
+MNT159;17965;1000;;16;291;2542;0,2;0,21
+MNT159;17965;10000;;;;;;
