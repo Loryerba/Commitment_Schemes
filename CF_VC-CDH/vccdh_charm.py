@@ -14,8 +14,8 @@ KeyGen requires:
 def keygen(g:G1,q:int) -> tuple:
 
     #list comprehension version
-    """
-     #calculate zi element <-$ Zp
+    
+    #calculate zi element <-$ Zp
     z=[random.randint(0,q) for i in range(0,q)]
 
     #calculate hi as g^{zi}
@@ -23,25 +23,6 @@ def keygen(g:G1,q:int) -> tuple:
     
     #calculate hij as g^{zi*zj}
     h_ij = [[g**(z[i]*z[j]) if i!=j else 0 for j in range(len(z))] for i in range(len(z))]
-    
-    return hi, h_ij, z"""
-    z=[]
-    #calculate zi element <-$ Zp
-    for i in range(q):
-       z.append(random.randint(0,q))
-    hi = []
-    #calculate hi as g^{zi}
-    for i in range(len(z)):
-        hi.append(g**z[i])
-    h_ij = []
-    #calculate hij as g^{zi*zj}
-    for i in range(len(z)):
-        h_ij.append([])
-        for j in range(len(z)):
-            if(i == j):
-                h_ij[i].append(0)
-                continue
-            h_ij[i].append(g**(z[i]*z[j]))
     return hi, h_ij, z
 
 """
