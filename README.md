@@ -23,7 +23,7 @@ Here there is a list of dependencies needed:
 - [x] Catalano & Fiore VC scheme based on RSA
 - [x] Catalano & Fiore VC scheme based on CDH
 - [x] Pointproofs base on CDH
-- [ ]  KVaC: Key-Value Commitments for Blockchains and Beyond based on RSA
+- [x]  KVaC: Key-Value Commitments for Blockchains and Beyond based on RSA
 
 
   
