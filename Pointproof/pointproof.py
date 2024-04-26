@@ -2,6 +2,7 @@ from charm.toolbox.pairinggroup import PairingGroup, G1,G2,GT,pair
 import random
 from operator import add
 from functools import reduce
+import time
 group = PairingGroup("MNT159")
 g1 = group.random(G1)
 g2 = group.random(G2)
@@ -9,28 +10,13 @@ alpha = random.randint(1,group.order())
 
 def KeyGen(N:int):
 
-    """lg1 = [g1**(alpha**i) for i in range(1,N+1)]
-    lg1N = [g1**(alpha**(N+i)) for i in range(1,N+1)]
-    lg2 = [g2**(alpha**i) for i in range(1,N+1)]"""
-    lg1 = []
-    #genearate pp g1^{alpha*i} where 1<= i <= N
-    for i in range (1,N+1):
-        lg1.append(g1**(alpha**i))
-
-    #generate pp g1^{alpha*(N+i)} where 2<=i<=N
-    lg1N = []
-    for i in range(2,N+1):
-        lg1N.append(g1**(alpha**(N+i)))
-
-    lg2 = []
-    #generate pp g2^{alpha*i} where 1<= i <=N
-    for i in range (1,N+1):
-        lg2.append(g2**(alpha**i))
+    lg1 = [g1**(alpha*i) for i in range(1,N+1)]
+    lg1N = [g1**(alpha*(N+i)) for i in range(1,N+1)]
+    lg2 = [g2**(alpha*i) for i in range(1,N+1)]
 
     #gt^{alpha*(N+1)} equals pair(g1^{alpha},g2^{N+1})
     gt = pair(g1**alpha,g2**(alpha**N))
     return lg1,lg1N,lg2,gt
-
 
 
 def Commit(lg1:list,messages:list):
@@ -43,7 +29,6 @@ def Commit(lg1:list,messages:list):
     return C
 
 
-
 def Proof(messages:list, i:int, N:int, C):
     
     #calculate inner exponent as mi*alpha^{i}
@@ -53,6 +38,14 @@ def Proof(messages:list, i:int, N:int, C):
 
     return proof
 
+def Proof2(messages:list, i:int, N:int, C):
+
+    innerexp = 0
+    for j in range(len(messages)):
+        if(j == i):
+            continue
+        innerexp = innerexp + messages[j] * (alpha ** (N+1-i+j))
+    return g1**innerexp
 
 def Verify(C,N:int,proof,gt,messages:list,i:int):
     
@@ -63,13 +56,6 @@ def Verify(C,N:int,proof,gt,messages:list,i:int):
 
     return(pair1 == pair2)
 
-
-def UpdateCommit(C,i,oldm,newm,lg1):
-    #calculate new commitment C' as C*g1^{mi'-m*alpha^{i}}
-    C = C + (g1**((newm-oldm)*(alpha**i)))
-
-    return C
-
 def Aggregate(proofs:list,scalars:list):
     #default value
     Ai = g1**0
@@ -77,7 +63,6 @@ def Aggregate(proofs:list,scalars:list):
         #calculate aggregation of i proofs as pi_1^{t1} + .. + pi_i^{ti}
         Ai= Ai + (proofs[i]**scalars[i])
     return Ai
-
 
 def VerifiyAggregate(C,N,Ai,messages,number,scalars,gt):
     #exponent of first pairing
@@ -89,7 +74,6 @@ def VerifiyAggregate(C,N,Ai,messages,number,scalars,gt):
     #calculate the first pairing as e(C,g2^{innterexp})
     pair1 = pair(C,g2**innterexp)
     
-
     #exponent of second pairing
     exp = 0
 
@@ -97,36 +81,73 @@ def VerifiyAggregate(C,N,Ai,messages,number,scalars,gt):
     for i in range(number):
         exp = exp + (messages[i]*scalars[i])
     
-   
     #calculate second pairing as e(pi_aggregate,g2) * gt^{exp}
     pair2 = pair(Ai,g2) * (gt**exp)
     return pair1 == pair2
 
+def UpdateCommit(C,i,oldm,newm,lg1):
+    #calculate new commitment C' as C*g1^{mi'-m*alpha^{i}}
+    C = C + (g1**((newm-oldm)*(alpha**i)))
+
+    return C
+
 def main():
 
-    messages = [2,3,4]
-    lg1,lg1N,lg2,gt = KeyGen(len(messages))
+    dim = 1000
+    messages = [random.randint(0,100) for i in range(0,dim)]
 
+        
+    start = time.time()
+    lg1,lg2,lg1N,gt = KeyGen(len(messages))
+    end = time.time()
+    print("Key gen required: " + str((end-start)*1000) + " ms")
+
+
+
+    start = time.time()
     C = Commit(lg1,messages)
+    end = time.time()
+    print("Commitment required: " + str((end-start)*1000) + " ms")
+    print(C)
 
+    start = time.time()
     A = Proof(messages,0,len(messages),C)
+    end = time.time()
 
-    print("Verifiy Output: " + str(Verify(C,len(messages),A,gt,messages,0)))
-
-    
-
+    print("Opening required: " + str((end-start)*1000) + " ms")
     A1= Proof(messages,1,len(messages),C)
+    print(A)
+    print(A1)
+
+    start = time.time()
+    print("Verifiy Output: " + str(Verify(C,len(messages),A,gt,messages,0)))
+    end = time.time()
+    print("Verifiy required: " + str((end-start)*1000) + " ms")
+
 
     proofs = [A,A1]
-    scalars = [102983830,1093803830]
+    scalars = [1202039,1292330]
+    start = time.time()
     Ai = Aggregate(proofs,scalars)
+    end = time.time()
+    print("Aggregation required: " + str((end-start)*1000) + " ms")
+    print(Ai)
+
+
+    start = time.time()
     print("Verify Aggregate output: " + str(VerifiyAggregate(C,len(messages),Ai,messages,len(scalars),scalars,gt)))
-    
+    end = time.time()
+    print("Verify aggregation required: " + str((end-start)*1000) + " ms")
 
-    newC = UpdateCommit(C,0,messages[0],10,lg1)
 
+    newvalue = random.randint(100,110)
+    start = time.time()
+    newC = UpdateCommit(C,0,messages[0],newvalue,lg1)
+    end = time.time()
+
+    print("Update commitment required: " + str((end-start)*1000) + " ms")
     #new vector generated at pos 0 new message equals 10
-    messages = [10,3,4]
+    messages[0] = newvalue
     print("Verifiy update commit output: " + str(Verify(newC,len(messages),A,gt,messages,0)))
 
 main()
