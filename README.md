@@ -39,7 +39,8 @@ Inside every folder, relatively for any branch, there is a couple of benchmarks 
 Also some schemes, like CF RSA,CF CDH and KVaC provides method for:
 + Update proof
 + Aggregation of proof
----
+
+The master branch also contains a bash script that includes all the schemes implemented previously as environment tests.
 ## NOTE:
 Every csv file contains data expressed in millisecond [ms]
 
