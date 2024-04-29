@@ -147,11 +147,10 @@ def updateProof(oldProof: int, e:list, oldm: int, newm: int, a:int, i:int, j:int
 
 
 def main():
-    messages = []
 
     dim = 100
-    for i in range(0,dim):
-        messages.append(random.randint(0,1000000))
+    messages = [random.randint(0,100) for i in range(0,dim)]
+
     
     start_time = time.time()
     n, ei_list, a, si_list = keyGen(k=1024,qlen= len(messages),l=25)
